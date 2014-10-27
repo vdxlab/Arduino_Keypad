@@ -1,8 +1,11 @@
 
+
 /*  Panel Numerico de Apertura de una puerta electrica, 
  *  con una clave de 4 digitos
  *  con panel de control web, para activarlo/desactivarlo 
  *  y poder abrir la puerta desde el movil. 
+ *
+ * By: Davide y Santiago
  */
 
 #include <Keypad.h>
@@ -38,6 +41,8 @@ Keypad kpd = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 int old_time=0; // time 
 
+int check_time = 500; // 500 miliseconds
+
 void setup() // this runs a single time each time the arduino powers up
 {
 
@@ -57,19 +62,21 @@ void setup() // this runs a single time each time the arduino powers up
 
 void loop() // this is the loop that runs all the time
 {
+
         //Each 10 seconds we check the Server
 	if(check()){
-		doServer();
+                 doServer();
 	}
         //The rest of the time we check the Keypad
         else{
-		doKeypad();
+         	doKeypad();		
+
 	}
      
 	delay(50);
 }
 
-int check_time = 10000; // 10 seconds 
+
 
 // time function
 boolean check(){
@@ -77,10 +84,10 @@ boolean check(){
 	int curr_time = millis();
 	int delta = curr_time - old_time;
 
-	if(delta<0) old_time = millis();//delta = 0; // every 50 days the millis reset 
+	if(delta < 0) old_time = millis();//delta = 0; // every 50 days the millis reset 
+
 	if(delta > check_time){
 		old_time = curr_time;
-		check_time = 10000;//10 seconds again
 		result = true;
 	}
 
@@ -88,6 +95,8 @@ boolean check(){
 }
 
 void doServer(){
+  
+     for (int x=0;x<7;x++){
     /**************************************
     *        PANEL DE CONTROL WEB
     **************************************/
@@ -95,25 +104,35 @@ void doServer(){
       bool response = true;
  
       if (client) {
+        Serial.print("Connected! a ");
+        Serial.println(check_time);
         String command = client.readString();
         command.trim();
         client.print("On");
-        if (command == "Conected")
+        if (command == "connected"){
+          Serial.println("connected");
           client.print("On");
-        else if (command == "Estado")
+        }
+        else if (command == "estado"){
           mostrarEstado(client);
-        else if (command == "OnOff") {
+           
+        }
+        else if (command == "onoff") {
           panelActivo = !panelActivo;
+          Serial.println("OnOff");
           mostrarEstado(client);
         }
-        else if (command == "Abrir")
-          posActual = 4;
+        else if (command == "abrir" && panelActivo) {
+          openDoor();
+           Serial.println("Abrir");
+        }
         else
           response = false;
         client.stop();
         
-        if (response) check_time = 2000; //If response, we check again in 2 seconds 
+
       }
+     }
 
 }
 
@@ -123,25 +142,35 @@ void doKeypad(){
   
   if(key)  // Check for a valid key.
   {
+    Serial.println(key);
     if (key == clave[posActual]) { //right key has been pressed
        posActual ++;  
     }
     else //wrong key has been pressed
         posActual = 0; 
-
     if (posActual == 4 && panelActivo) {   //you got the code right, it's a 4-digit code...
         posActual = 0;   //resets to waiting for the first key
-        digitalWrite(ledpin, HIGH);  // tells to open relay on pin 10
-        delay(2000);  //wait two seconds
-        digitalWrite(ledpin, LOW);  // close relay
+        openDoor();
         
-    }
+    }    
   }
 
 }
-void mostrarEstado(YunClient client) {
-   if (panelActivo)
-        client.print("On");
-   else
-        client.print("Off");
+
+void openDoor() {
+ 
+        digitalWrite(ledpin, HIGH);  // tells to open relay on pin 10
+        delay(2000);  //wait two seconds
+        digitalWrite(ledpin, LOW);  // close relay 
+        
 }
+
+void mostrarEstado(YunClient client) {
+   if (panelActivo) {
+        client.print("On");
+        Serial.println("Estado panel: On");
+   }
+   else {
+        client.print("Off");
+        Serial.println("Estado panel: Off");        
+   }
