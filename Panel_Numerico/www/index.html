@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="cache-control" content="max-age=0" />
+	<meta HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE" />
+	<link rel="stylesheet" href="jq/jquery.mobile-1.4.5.css" />
+    <script type="text/javascript" src="jq/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="jq/jquery.mobile-1.4.5.min.js"></script>
+
+	<script type="text/javascript">
+	function showProgress(){
+		$.mobile.loading('show',{
+			text: "Please Loading",
+			textVisible: true,
+			theme: 'a'
+		});
+	}
+	function hideProgress(){
+		$.mobile.loading('hide');
+	}
+
+	function togglePanel(){
+		$.ajax({
+			beforeSend: function(){showProgress();},
+			url: "/arduino/onoff",
+			success: function(data){
+				$("#proba").text(data);
+				hideProgress();
+
+			}
+		});
+	}
+	function openDoor(){
+		$.ajax({
+			beforeSend: function(){showProgress();},
+			url: "/arduino/abrir",
+			success: function(){hideProgress();}			
+		});
+	}
+	function updateUI(){
+		$.ajax({
+			beforeSend: function(){showProgress();},
+			url: "/arduino/estado",
+			success: function(data){
+				$("#proba").text(data);
+				$("#btn_switch").val(data).slider('refresh');
+				hideProgress();
+
+			}
+		});
+	}
+	</script>
+</head>
+
+<body>
+
+<div data-role="page" id="page1">
+
+<p id="proba">Proba boton</p>
+
+<div data-role="fieldcontain">
+	<label for="flip-2">Estado Panel</label>
+	<select name="flip-2" id="btn_switch" data-role="slider">
+		<option value="Off">Off</option>
+		<option value="On">On</option>
+	</select>
+</div>
+<button id="btn_open" class="ui-btn ui-corner-all">Abrir Puerto</button>
+<button id="btn_toogle" class="ui-btn ui-corner-all">Actualiza Estado</button>
+</div>
+
+ <script type="text/javascript">
+
+		$( document ).on( "pageshow","#page1", function( event ) {
+//			alert( "This page was just enhanced by jQuery Mobile!" );
+//			$("#proba").load("/arduino/estado");
+			updateUI();
+		});
+
+		$("#btn_open").on("click",function(e){
+			openDoor();
+			e.preventDefault();
+		});
+		$("#btn_toogle").on("click",function(e){
+			updateUI();
+		//	e.preventDefault();
+		});
+		$("#btn_switch").on("change",function(e){
+			togglePanel();
+			e.preventDefault();
+		});
+
+    </script>
+</body>
+</html>
